@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
+  <meta name="theme-color" content="#102a25" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="The Verdant Crown — an isometric open-world adventure for phone and tablet." />
+  <title>The Verdant Crown</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main id="game-shell" aria-label="The Verdant Crown game">
+    <canvas id="game" aria-label="Isometric adventure world"></canvas>
+
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="grain" aria-hidden="true"></div>
+
+    <div id="hud" class="hud is-hidden" aria-live="polite">
+      <section class="hud-left" aria-label="Player status">
+        <div class="hearts" id="hearts"></div>
+        <div class="stamina-wrap" aria-label="Stamina">
+          <div class="stamina-ring"><div class="stamina-fill" id="staminaFill"></div></div>
+        </div>
+        <div class="rupee-pill" aria-label="Rupees">
+          <span class="rupee-gem" aria-hidden="true"></span>
+          <span id="rupeeCount">0</span>
+        </div>
+      </section>
+
+      <section class="quest-card" id="questCard" aria-label="Current quest">
+        <div class="quest-eyebrow" id="questEyebrow">THE VERDANT CROWN</div>
+        <div class="quest-title" id="questTitle">Speak with Elder Maelin</div>
+        <div class="quest-progress" id="questProgress"></div>
+      </section>
+
+      <section class="hud-right">
+        <div class="minimap-wrap">
+          <canvas id="minimap" width="184" height="184" aria-label="World map"></canvas>
+          <div class="minimap-ring"></div>
+          <div class="compass-n">N</div>
+        </div>
+        <button class="icon-button menu-button" id="pauseButton" aria-label="Pause and open menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></svg>
+        </button>
+      </section>
+
+      <div class="objective-toast" id="objectiveToast" role="status"></div>
+      <div class="area-banner" id="areaBanner" aria-live="polite">
+        <span class="area-rule"></span>
+        <span id="areaName">Mossbell Village</span>
+        <span class="area-rule"></span>
+      </div>
+
+      <div class="boss-bar is-hidden" id="bossBar">
+        <div class="boss-name">THE HOLLOW KING</div>
+        <div class="boss-track"><div class="boss-fill" id="bossFill"></div></div>
+      </div>
+    </div>
+
+    <div id="touchControls" class="touch-controls is-hidden" aria-label="Touch controls">
+      <div class="joystick" id="joystick" aria-label="Movement joystick">
+        <div class="joystick-base"></div>
+        <div class="joystick-knob" id="joystickKnob"></div>
+        <div class="joystick-glyph" aria-hidden="true">✦</div>
+      </div>
+      <div class="action-cluster">
+        <button class="action-button dash-button" id="dashButton" aria-label="Dash">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h7l-3 5h4l-3 5h4l-4 4H3l3-5H2l3-5H1z" opacity=".95"/></svg>
+          <span>DASH</span>
+        </button>
+        <button class="action-button attack-button" id="attackButton" aria-label="Sword attack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 2.2 21.8 3.4 10.5 14.7l-2.2.9.9-2.2L20.6 2.2zM7.8 14.4l1.8 1.8-4.2 4.2-1.8-1.8z"/><path d="M5.4 17.7 3.3 19.8l.9.9 2.1-2.1z" opacity=".7"/></svg>
+          <span>STRIKE</span>
+        </button>
+        <button class="action-button interact-button" id="interactButton" aria-label="Interact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a4 4 0 0 1 4 4c0 1.5-.8 2.8-2 3.5v2h3.5a2 2 0 0 1 2 2v2.3h-3v5.2H7.5v-5.2h-3V14a2 2 0 0 1 2-2H10v-2a4 4 0 0 1 2-7.5z"/></svg>
+          <span>USE</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="interactPrompt" class="interact-prompt is-hidden"><span class="prompt-key">E</span><span id="interactLabel">Talk</span></div>
+
+    <div id="dialog" class="dialog is-hidden" role="dialog" aria-modal="true">
+      <div class="dialog-card">
+        <div class="dialog-portrait" id="dialogPortrait"></div>
+        <div class="dialog-copy">
+          <div class="dialog-name" id="dialogName">Elder Maelin</div>
+          <p class="dialog-text" id="dialogText"></p>
+          <div class="dialog-actions" id="dialogActions">
+            <button class="dialog-next" id="dialogNext">Continue <span aria-hidden="true">›</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pauseMenu" class="menu-overlay is-hidden" role="dialog" aria-modal="true" aria-label="Pause menu">
+      <div class="menu-panel">
+        <div class="menu-crest" aria-hidden="true">✦</div>
+        <h2>Journey Paused</h2>
+        <p class="menu-sub" id="menuLocation">Mossbell Village</p>
+        <div class="menu-stats">
+          <div><span id="menuStones">0</span><small>Wardstones</small></div>
+          <div><span id="menuRupees">0</span><small>Rupees</small></div>
+          <div><span id="menuTime">0:00</span><small>Journey</small></div>
+        </div>
+        <div class="menu-buttons">
+          <button class="primary-button" id="resumeButton">Resume</button>
+          <button class="secondary-button" id="saveButton">Save Journey</button>
+          <button class="secondary-button" id="controlsButton">Controls</button>
+          <button class="secondary-button danger" id="newGameButton">New Journey</button>
+        </div>
+        <div class="menu-foot">Progress saves automatically at wardstones.</div>
+      </div>
+    </div>
+
+    <div id="controlsPanel" class="menu-overlay is-hidden" role="dialog" aria-modal="true" aria-label="Controls">
+      <div class="menu-panel controls-panel">
+        <h2>How to Play</h2>
+        <div class="control-grid">
+          <div class="control-item"><span class="keycap">WASD</span><p>Move through the world. On touch, use the left joystick.</p></div>
+          <div class="control-item"><span class="keycap">J / SPACE</span><p>Swing your sword. Tap <b>Strike</b> on touch.</p></div>
+          <div class="control-item"><span class="keycap">E</span><p>Talk, read, open, and awaken. Tap <b>Use</b> on touch.</p></div>
+          <div class="control-item"><span class="keycap">SHIFT</span><p>Dash with a burst of speed. Tap <b>Dash</b> on touch.</p></div>
+        </div>
+        <p class="control-tip">Golden light marks your next goal. Restore the three Wardstones, then face the Hollow King beneath the old sanctum.</p>
+        <button class="primary-button" id="closeControls">Back</button>
+      </div>
+    </div>
+
+    <div id="victory" class="victory is-hidden" role="dialog" aria-modal="true">
+      <div class="victory-inner">
+        <div class="victory-rays" aria-hidden="true"></div>
+        <div class="victory-crown" aria-hidden="true">♛</div>
+        <p class="victory-eyebrow">THE VERDANT CROWN</p>
+        <h1>The Hollow King<br /><em>Falls</em></h1>
+        <p class="victory-copy">Light returns to the valley. The roots remember your name.</p>
+        <div class="victory-stats">
+          <div><span id="victoryTime">0:00</span><small>Journey</small></div>
+          <div><span id="victoryRupees">0</span><small>Rupees</small></div>
+          <div><span id="victoryHearts">0</span><small>Hearts</small></div>
+        </div>
+        <button class="primary-button" id="victoryContinue">Keep Exploring</button>
+      </div>
+    </div>
+
+    <div id="titleScreen" class="title-screen" role="dialog" aria-modal="true" aria-label="Title screen">
+      <div class="title-shade"></div>
+      <div class="title-content">
+        <p class="title-kicker">AN ISOMETRIC ADVENTURE</p>
+        <h1 class="game-title">The<br /><span>Verdant Crown</span></h1>
+        <p class="title-sub">A sleeping valley. Three broken wardstones.<br />One small hero with a very sharp sword.</p>
+        <div class="title-actions">
+          <button class="primary-button title-start" id="startButton">Begin Journey</button>
+          <button class="secondary-button title-continue is-hidden" id="continueButton">Continue</button>
+          <button class="text-button" id="titleControls">How to play</button>
+        </div>
+        <div class="title-hint">
+          <span><i class="dot desktop-dot"></i>WASD to move</span>
+          <span><i class="dot desktop-dot"></i>J to strike</span>
+          <span><i class="dot touch-dot"></i>Touch controls on phone &amp; tablet</span>
+        </div>
+      </div>
+      <div class="title-footer">
+        <span>✦</span>
+        <span>An open-world storybook adventure</span>
+        <span>✦</span>
+      </div>
+    </div>
+
+    <div id="loading" class="loading"><div class="loading-mark">✦</div><p>Waking the valley…</p></div>
+    <div id="rotateHint" class="rotate-hint"><div>↻</div><p>Turn your device for a wider view</p></div>
+  </main>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
